@@ -1,7 +1,8 @@
 # Next-steps checklists
 
 Quote one of these two variants verbatim as the closing message, chosen by
-whether `TEACH_ARTIFACTS_MISSING` (from `check.sh`) was empty or not.
+whether `TEACH_ARTIFACTS_MISSING` (from `check.sh`) was empty or not. Append
+whichever of the extra callouts below apply, on top of the chosen variant.
 
 Both variants always lead with the GitHub App reminder — it is the single
 most-missed step, and cloud-session pushes fail with a silent 403 without it.
@@ -14,9 +15,11 @@ Next steps:
      claude.ai -> Settings -> GitHub -> install the App (not just OAuth).
      OAuth alone won't let cloud sessions push changes back (fails with a 403).
   2. This doesn't look like a fully set-up /teach project yet (missing: <list>).
-     Open this folder in Claude Code — locally, or in a new cloud session pointed at
-     this repo — and run the /teach skill to build out your study plan (it will
-     ask what you want to learn and create MISSION.md, RESOURCES.md, lessons/).
+     Open a new Claude Code session in this folder — locally, or a cloud session
+     pointed at this repo — and run the /teach skill to build out your study plan
+     (it will ask what you want to learn and create MISSION.md, RESOURCES.md,
+     lessons/). It needs to be a session that starts *after* /teach was installed,
+     since a session already running won't see a skill installed mid-conversation.
      Once it's done, commit + push again (re-run /teach-sync, or let the agent do it).
   3. On your phone, open claude.ai/code or the Claude Android app.
   4. Start a new cloud session and point it at this repo.
@@ -49,6 +52,18 @@ Since /teach hadn't run yet, I named the repo after the folder ('<SUGGESTED_REPO
 Once you know the real topic, want me to rename it? Totally optional, and easy to do
 later yourself too: `gh repo rename <new-name>`, run from inside the project — it
 updates your local `origin` remote to match automatically.
+```
+
+## Extra callout — only if `/teach` was just installed during this conversation
+
+Append this as its own short, clearly separated line — don't let it get lost
+in the checklist above. This is the common case, and the one most likely to
+confuse someone who just watched the install apparently succeed:
+
+```
+Heads up: /teach installed successfully, but this chat session was already running
+before that happened, so it won't show up as a command here. Open a *new* Claude
+Code session in this folder and run /teach there.
 ```
 
 ## Extra callout — only if the user declined to install `/teach` during this run

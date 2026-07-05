@@ -24,14 +24,15 @@ npx skills add Damienearle/teach-mobile-sync --skill teach-sync -a claude-code
 
 ## Quick start
 
-Inside a Claude Code session, from your `/teach` project's root (or anywhere, if you pass a path):
+`/teach` and `/teach-sync` are separate, user-invoked skills — run `/teach` yourself first to build the study plan, then `/teach-sync` to push it:
 
 ```
-/teach-sync
-
-# or, to create a brand-new topic folder and sync it in one go:
-/teach-sync path/to/new-topic
+# in your /teach project's root
+/teach          # builds MISSION.md, RESOURCES.md, lessons/
+/teach-sync     # pushes it to a private GitHub repo, named after your topic
 ```
+
+`/teach-sync path/to/new-topic` also works standalone on an empty folder — it'll offer to install `/teach` for you and push a placeholder-named repo. Just note that installing a skill mid-conversation doesn't make it usable in *that same* conversation (Claude Code loads its command list once, at session start) — you'd need to open a new session before running `/teach`. See [`INSTRUCTIONS.md`](./INSTRUCTIONS.md) for both orders in full.
 
 Claude will walk you through it conversationally — confirming the directory, checking whether `/teach` itself is installed, flagging any `.gitignore` risk, and setting up the private GitHub repo — asking questions in chat rather than shell prompts.
 
@@ -44,7 +45,7 @@ Claude will walk you through it conversationally — confirming the directory, c
 5. Verifies the `.claude`/`.agents` skill folder and `learning-records/` are actually tracked by git
 6. Commits your changes
 7. Creates a **private** GitHub repo (via `gh` CLI if you have it, or asks for a repo URL) and pushes
-8. Walks through next steps — including the easy-to-miss Claude GitHub App install, and a reminder to run `/teach` if the project doesn't look fully set up yet
+8. Walks through next steps — including the easy-to-miss Claude GitHub App install, and a reminder to run `/teach` (in a new session, if it was just installed) if the project doesn't look fully set up yet
 
 Public repos are never offered — this is personal learning progress, kept private.
 

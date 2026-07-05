@@ -9,9 +9,13 @@ argument-hint: "[path/to/topic] — optional; target /teach project folder, crea
 
 Get a `/teach` study-plan project onto GitHub as a **private** repo, so it can be
 resumed from a Claude Code cloud session or the mobile app when the laptop
-isn't reachable. This is the natural step after (or before) a `/teach`
-session: run it once a study plan exists to push progress, or run it first on
-an empty folder to stand up a brand-new topic before `/teach` fills it in.
+isn't reachable. The recommended order is `/teach` first, `/teach-sync`
+second — run `/teach` yourself to build out a study plan, then run
+`/teach-sync` to push it, so the repo name can be based on the real topic
+(see step 7). Running `/teach-sync` first, on a still-empty folder, is also
+supported (it'll offer to install `/teach` and stand up the repo under a
+folder-derived name for now) — but note that installing `/teach` mid-run
+doesn't make it invocable in that same conversation; see step 3.
 
 All paths below (`scripts/check.sh`, `scripts/apply.sh`,
 `references/next-steps.md`) are relative to this file's own directory —
@@ -71,11 +75,21 @@ on `TEACH_SKILL_FOUND` and `TEACH_ARTIFACTS_MISSING`:
 
 - **Not found, and the folder looks brand-new** (most or all of
   `TEACH_ARTIFACTS_MISSING` is populated — little or nothing exists yet):
-  tell the user `/teach` isn't installed here, and suggest installing it now
+  tell the user `/teach` isn't installed here, and offer to install it now
   via `npx skills@latest add mattpocock/skills --skill teach` — there's
-  nothing to lose yet, and this matches the natural order (stand up the
-  empty repo first, let `/teach` fill it in second). Lean toward "yes,
-  install now" as the default suggestion, but let the user decide.
+  nothing to lose yet. Installing it is harmless, but be explicit that
+  **this does not make `/teach` invocable in the current conversation**:
+  Claude Code loads its slash-command list when a session starts, so a
+  skill installed mid-session doesn't show up until a *new* session is
+  opened in this folder. Don't run a fresh `check.sh` afterward and treat
+  `TEACH_SKILL_FOUND=yes` as confirmation `/teach` is ready to run right
+  now — the files landing on disk is not the same thing as this session
+  knowing about them. Say plainly, e.g.: "Once that's installed, open a
+  new Claude Code session in this folder and run `/teach` there — it
+  won't show up as a command in this chat." Then continue this
+  `/teach-sync` run to completion as normal; the git/GitHub steps below
+  don't depend on `/teach` being invocable, only on whether its artifacts
+  exist yet.
 - **Not found, but some artifacts already exist** (e.g. `MISSION.md` is
   there but no skill folder — deleted, or installed under a variant path the
   detection glob missed): this is unusual. Ask the user what happened before
@@ -84,12 +98,12 @@ on `TEACH_SKILL_FOUND` and `TEACH_ARTIFACTS_MISSING`:
 - **Found**: say so briefly and move on. Don't manufacture a question when
   the answer is already obvious.
 - **If the user declines to install**: continue with the sync anyway, but
-  make sure the final next-steps message (step 9) clearly calls out that the
-  cloud session won't have `/teach` until it's added before the next push —
-  this warning must not get buried.
-- **If install is run**: re-verify with a fresh `check.sh` call (cheap,
-  read-only) rather than trusting the installer's own exit code — it can
-  land files under an unexpected path.
+  make sure the final next-steps message (step 9) clearly calls out that
+  `/teach` still needs installing (and a fresh session) before it can be
+  run — this warning must not get buried.
+- **If install is run**: track that it happened in this conversation, since
+  step 9 needs to include the new-session callout because of it — but don't
+  otherwise change how the rest of this run proceeds.
 
 ## 4. Git init
 
@@ -240,12 +254,18 @@ Read `references/next-steps.md` and quote the matching variant verbatim
 delivered conversationally rather than dumped as a raw block. Always include
 the Claude GitHub App reminder — installing the App (not just OAuth) is the
 single most-missed step, and skipping it makes cloud-session pushes fail
-silently with a 403. If `/teach` install was declined in step 3, also
-include the extra callout from that reference file. If the repo name came
-from `REPO_NAME_SOURCE=folder_name` in step 7, also include that file's
-rename callout — phrase it as an open offer the user can take or leave, not
-a task they now owe you, since it's purely cosmetic and costs nothing to
-skip.
+silently with a 403.
+
+- If `/teach` install was declined in step 3, also include that reference
+  file's decline callout.
+- If `/teach` install *was* run during this conversation (step 3), instead
+  include that file's new-session callout — this is the common case and the
+  one most likely to cause real confusion if skipped, since the user just
+  watched the install apparently succeed.
+- If the repo name came from `REPO_NAME_SOURCE=folder_name` in step 7, also
+  include that file's rename callout — phrase it as an open offer the user
+  can take or leave, not a task they now owe you, since it's purely cosmetic
+  and costs nothing to skip.
 
 ## Common failure recovery
 
