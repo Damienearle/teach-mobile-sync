@@ -11,14 +11,16 @@ This is a **Claude Code Skill**, `teach-sync`. Run it from inside a Claude Code 
 **Global (recommended)** — install once, use it from any `/teach` project:
 
 ```bash
-npx skills add Damienearle/teach-mobile-sync --skill teach-sync -g
+npx skills add Damienearle/teach-mobile-sync --skill teach-sync -g -a claude-code
 ```
 
 **Project-local** — installs into the current project's own `.claude/skills/teach-sync/`, version-pinned and committed with it. Run this from inside the target `/teach` project instead:
 
 ```bash
-npx skills add Damienearle/teach-mobile-sync --skill teach-sync
+npx skills add Damienearle/teach-mobile-sync --skill teach-sync -a claude-code
 ```
+
+`-a claude-code` scopes the install to Claude Code only. Without it, `npx skills` defaults to wiring up ~40 other coding agents it supports (Cursor, Cline, Amp, etc.) via a shared `~/.agents/skills/` copy and per-agent symlinks — harmless clutter if you don't use them, but one of those default targets (`promptscript`) has a [known bug](https://github.com/vercel-labs/skills/issues/1424) where it errors out on global installs.
 
 ## Quick start
 

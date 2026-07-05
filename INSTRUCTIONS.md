@@ -8,9 +8,9 @@ Use this to continue your `/teach` study plan from your phone.
 
 1. Install the `teach-sync` Claude Code skill once, so it's available for every future topic:
    ```
-   npx skills add Damienearle/teach-mobile-sync --skill teach-sync -g
+   npx skills add Damienearle/teach-mobile-sync --skill teach-sync -g -a claude-code
    ```
-   (`-g` installs it globally, to `~/.claude/skills/teach-sync/`, so it works from any `/teach` project without reinstalling. Drop `-g` to install it into just the current project instead, version-pinned and committed with it.)
+   (`-g` installs it globally, to `~/.claude/skills/teach-sync/`, so it works from any `/teach` project without reinstalling. Drop `-g` to install it into just the current project instead, version-pinned and committed with it. `-a claude-code` scopes the install to Claude Code only — without it, `npx skills` defaults to also wiring up ~40 other coding agents it supports via a shared `~/.agents/skills/` copy and per-agent symlinks, and one of those default targets, `promptscript`, has a known bug that errors out on global installs.)
 
 2. Then, for each `/teach` project you want synced, inside a Claude Code session:
    ```
