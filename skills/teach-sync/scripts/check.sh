@@ -36,7 +36,23 @@ cd "$TARGET_DIR" || exit 1
 
 echo "TARGET_DIR=$TARGET_DIR"
 echo "TARGET_DIR_EXISTS=yes"
-echo "SUGGESTED_REPO_NAME=$(slugify "$(basename "$TARGET_DIR")")"
+
+# ---------------------------------------------------------------------------
+# Repo name suggestion — prefers the real /teach topic over the folder name
+# once one exists (MISSION.md's "# Mission: {Topic}" heading), since a
+# brand-new topic folder's name is often just a placeholder picked before
+# /teach's own topic conversation happened.
+# ---------------------------------------------------------------------------
+
+if MISSION_TOPIC="$(extract_mission_topic "$TARGET_DIR")"; then
+  echo "MISSION_TOPIC=$MISSION_TOPIC"
+  echo "SUGGESTED_REPO_NAME=$(slugify "$MISSION_TOPIC")"
+  echo "REPO_NAME_SOURCE=mission_topic"
+else
+  echo "MISSION_TOPIC="
+  echo "SUGGESTED_REPO_NAME=$(slugify "$(basename "$TARGET_DIR")")"
+  echo "REPO_NAME_SOURCE=folder_name"
+fi
 
 # ---------------------------------------------------------------------------
 # Git repo state

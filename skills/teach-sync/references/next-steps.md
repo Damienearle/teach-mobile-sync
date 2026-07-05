@@ -39,6 +39,18 @@ Next steps:
   6. Back on your laptop: git pull
 ```
 
+## Extra callout — only if the repo name came from the folder, not a real topic (`REPO_NAME_SOURCE=folder_name` in step 7)
+
+Append this as its own short line, phrased as an offer the user can take or
+leave — it's cosmetic, so don't make it sound like a pending task:
+
+```
+Since /teach hadn't run yet, I named the repo after the folder ('<SUGGESTED_REPO_NAME>').
+Once you know the real topic, want me to rename it? Totally optional, and easy to do
+later yourself too: `gh repo rename <new-name>`, run from inside the project — it
+updates your local `origin` remote to match automatically.
+```
+
 ## Extra callout — only if the user declined to install `/teach` during this run
 
 Append this as its own short, clearly separated line — don't let it get lost

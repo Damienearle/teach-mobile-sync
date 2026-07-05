@@ -90,3 +90,21 @@ slugify() {
   echo "$1" | tr '[:upper:]' '[:lower:]' | tr ' _' '-' \
     | sed -E 's/[^a-z0-9-]+//g; s/-+/-/g; s/^-+//; s/-+$//'
 }
+
+# Extracts the topic from <dir>/MISSION.md's "# Mission: {Topic}" heading —
+# the format /teach's own MISSION-FORMAT.md prescribes. Prints the trimmed
+# topic text to stdout; prints nothing and returns 1 if MISSION.md doesn't
+# exist yet (a brand-new topic /teach hasn't run on) or doesn't match the
+# expected heading. Lets check.sh prefer a real topic name over the folder's
+# name for the suggested repo name once one exists.
+extract_mission_topic() {
+  local mission_file="$1/MISSION.md"
+  [[ -f "$mission_file" ]] || return 1
+  local line topic
+  line="$(grep -m1 -E '^# Mission:' "$mission_file" 2>/dev/null)"
+  [[ -n "$line" ]] || return 1
+  topic="${line#*Mission:}"
+  topic="$(echo "$topic" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
+  [[ -n "$topic" ]] || return 1
+  printf '%s' "$topic"
+}

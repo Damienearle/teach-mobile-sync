@@ -49,6 +49,32 @@ pass "check.sh detects an actual /teach install"
 
 rm -rf "$PROJECT/.claude"
 
+# --- repo name suggestion: folder name vs. mission topic --------------------
+
+OUT="$(bash "$SCRIPT_DIR/check.sh" --dir "$PROJECT")"
+[[ "$(kv "$OUT" REPO_NAME_SOURCE)" == "folder_name" ]] \
+  || fail "expected REPO_NAME_SOURCE=folder_name before MISSION.md exists"
+[[ "$(kv "$OUT" SUGGESTED_REPO_NAME)" == "my-topic" ]] \
+  || fail "expected SUGGESTED_REPO_NAME derived from the folder name"
+pass "check.sh suggests a folder-derived repo name before /teach has run"
+
+cat > "$PROJECT/MISSION.md" <<'EOF'
+# Mission: Learn Rust Basics
+
+## Why
+Ship a small CLI tool.
+EOF
+OUT="$(bash "$SCRIPT_DIR/check.sh" --dir "$PROJECT")"
+[[ "$(kv "$OUT" REPO_NAME_SOURCE)" == "mission_topic" ]] \
+  || fail "expected REPO_NAME_SOURCE=mission_topic once MISSION.md exists"
+[[ "$(kv "$OUT" MISSION_TOPIC)" == "Learn Rust Basics" ]] \
+  || fail "expected MISSION_TOPIC to be parsed from the heading, got: $(kv "$OUT" MISSION_TOPIC)"
+[[ "$(kv "$OUT" SUGGESTED_REPO_NAME)" == "learn-rust-basics" ]] \
+  || fail "expected SUGGESTED_REPO_NAME derived from the mission topic, got: $(kv "$OUT" SUGGESTED_REPO_NAME)"
+pass "check.sh prefers the mission topic over the folder name once /teach has run"
+
+rm -f "$PROJECT/MISSION.md"
+
 bash "$SCRIPT_DIR/apply.sh" --dir "$PROJECT" --stage init || fail "init stage failed"
 [[ -d "$PROJECT/.git" ]] || fail "expected .git after init stage"
 pass "init stage creates a git repo"

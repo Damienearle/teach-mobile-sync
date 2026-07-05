@@ -142,9 +142,21 @@ check:
 
 - **`GH_CLI=yes` and `GH_AUTHENTICATED=yes`** (the smooth path — and what
   every sync after the first one should look like): offer to create the
-  repo via `gh`. Suggest `SUGGESTED_REPO_NAME` (derived from the topic
-  folder's own name) as the default repo name, but let the user override it.
-  Then run:
+  repo via `gh`. `SUGGESTED_REPO_NAME` is only a suggestion — always ask in
+  chat before using it, and use whatever name the user gives instead if they
+  offer one. How to phrase the ask depends on `REPO_NAME_SOURCE`:
+  - `mission_topic` — `MISSION.md` already exists, so the name was derived
+    from its actual topic (`MISSION_TOPIC`). E.g. "Based on your mission
+    ('`<MISSION_TOPIC>`'), I'd suggest '`<SUGGESTED_REPO_NAME>`' for the repo
+    name — sound good, or would you rather use something else?"
+  - `folder_name` — no `MISSION.md` yet (this is a brand-new topic `/teach`
+    hasn't run on), so the name just comes from the folder. Say so plainly,
+    e.g. "I don't have a real topic yet since `/teach` hasn't run here, so
+    I'd suggest naming the repo '`<SUGGESTED_REPO_NAME>`' after the folder for
+    now — happy to use a different name, or you can rename it later once you
+    know the topic (see the closing notes)."
+
+  Once the user has confirmed a name (suggested or their own), run:
 
   ```
   bash <skill_dir>/scripts/apply.sh --dir <target> --stage remote --gh-create-repo <name>
@@ -213,7 +225,11 @@ delivered conversationally rather than dumped as a raw block. Always include
 the Claude GitHub App reminder — installing the App (not just OAuth) is the
 single most-missed step, and skipping it makes cloud-session pushes fail
 silently with a 403. If `/teach` install was declined in step 3, also
-include the extra callout from that reference file.
+include the extra callout from that reference file. If the repo name came
+from `REPO_NAME_SOURCE=folder_name` in step 7, also include that file's
+rename callout — phrase it as an open offer the user can take or leave, not
+a task they now owe you, since it's purely cosmetic and costs nothing to
+skip.
 
 ## Common failure recovery
 

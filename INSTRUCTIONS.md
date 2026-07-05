@@ -57,7 +57,9 @@ Use this to continue your `/teach` study plan from your phone.
 
 - GitHub's free plan includes unlimited **private** repos at no cost — you can create a repo for every new study topic to take on the road.
 - Bookmark `claude.ai/code` to your phone's home screen (Chrome → Add to Home Screen) so opening a cloud session is one tap.
-- **Starting a brand-new topic?** `/teach-sync` only handles the git/GitHub side — it doesn't generate your actual study plan. The order that works:
-  1. `/teach-sync path/to/new-topic` — creates the folder, offers to install the `/teach` skill into it, and pushes an (empty) private repo.
-  2. In that same folder, run the `/teach` skill — it'll ask what you want to learn and build `MISSION.md`, `RESOURCES.md`, and `lessons/`.
-  3. Run `/teach-sync` again (or let the agent commit/push) to sync the real study plan up.
+- **Starting a brand-new topic?** `/teach-sync` only handles the git/GitHub side — it doesn't generate your actual study plan. Two orders work, depending on where you want to run `/teach`:
+  - **Recommended — `/teach` first, locally:** create/`cd` into the new topic folder yourself, run `/teach` (it asks what you want to learn and builds `MISSION.md`, `RESOURCES.md`, `lessons/`), then run `/teach-sync`. Since `MISSION.md` already exists, `/teach-sync` suggests a repo name based on your actual topic instead of the folder name — one pass, nothing to rename later.
+  - **Repo-first — e.g. you want to run `/teach` from a cloud session instead:**
+    1. `/teach-sync path/to/new-topic` — creates the folder, offers to install the `/teach` skill into it, and pushes a private repo (named after the folder, since there's no topic yet).
+    2. Run `/teach` — locally, or in a cloud session pointed at that repo — to build out `MISSION.md`, `RESOURCES.md`, and `lessons/`.
+    3. Run `/teach-sync` again (or let the agent commit/push) to sync the real study plan up. It'll offer to rename the repo to match the real topic now that one exists — purely optional.
