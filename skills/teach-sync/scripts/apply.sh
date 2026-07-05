@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
 #
-# apply.sh --dir PATH --stage all|init|gitignore|commit|remote|push [flags]
+# apply.sh --dir PATH --stage all|local|publish|init|gitignore|commit|remote|push [flags]
 #
 # Mechanical, non-interactive git/gh actions for teach-sync. Never prompts —
 # every decision must already be made by the caller and passed as a flag.
 # Staged and idempotent: each stage can be re-run safely, and a later stage
 # can be re-invoked alone after an earlier one already succeeded.
 #
+# `local` and `publish` are composite stages that group the individual ones
+# below into two conversational checkpoints instead of five separate tool
+# invocations, without collapsing the one checkpoint that actually matters:
+# nothing leaves the machine until `publish` runs, so the caller gets to see
+# `local`'s output (e.g. an untracked-file warning from the commit stage)
+# before approving a push. `all` remains available for a single-call, no
+# intermediate-checkpoint run when nothing needs deciding either way.
+#
 # Flags:
 #   --dir PATH               required
-#   --stage STAGE             required; one of: all, init, gitignore, commit, remote, push
+#   --stage STAGE             required; one of: all, local, publish, init, gitignore, commit,
+#                             remote, push
 #   --fix-gitignore           (gitignore stage) actually strip risky lines; otherwise a no-op
 #   --commit-message-stdin    (commit stage) read the commit message from stdin instead of
 #                             using the default "sync /teach progress"
@@ -193,6 +202,15 @@ case "$STAGE" in
   commit) stage_commit ;;
   remote) stage_remote ;;
   push) stage_push ;;
+  local)
+    stage_init
+    stage_gitignore
+    stage_commit
+    ;;
+  publish)
+    stage_remote
+    stage_push
+    ;;
   all)
     stage_init
     stage_gitignore

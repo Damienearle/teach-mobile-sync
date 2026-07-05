@@ -155,4 +155,54 @@ else
   pass "find_gh_bin correctly reports gh as unavailable when it's off PATH and not in any known location"
 fi
 
+# --- composite stage: local (init + gitignore + commit) ---------------------
+
+PROJECT2="$WORK/second-topic"
+mkdir -p "$PROJECT2"
+
+bash "$SCRIPT_DIR/apply.sh" --dir "$PROJECT2" --stage local --commit-message-stdin <<<"sync /teach progress"
+CODE=$?
+[[ "$CODE" -eq 3 ]] || fail "expected the local stage to exit 3 on a still-empty folder, got $CODE"
+[[ -d "$PROJECT2/.git" ]] || fail "expected the local stage to have run git init before hitting exit 3"
+pass "local stage inits git, then exits 3 on a still-empty folder"
+
+echo "# My Topic" > "$PROJECT2/MISSION.md"
+cat > "$PROJECT2/.gitignore" <<'EOF'
+learning-records
+EOF
+
+bash "$SCRIPT_DIR/apply.sh" --dir "$PROJECT2" --stage local --fix-gitignore --commit-message-stdin <<<"sync /teach progress"
+CODE=$?
+[[ "$CODE" -eq 0 ]] || fail "expected the local stage to exit 0 with real content, got $CODE"
+grep -q "learning-records" "$PROJECT2/.gitignore" \
+  && fail "expected local --fix-gitignore to strip the risky line"
+git -C "$PROJECT2" log -1 --format=%s 2>/dev/null | grep -q "sync /teach progress" \
+  || fail "expected the local stage to have committed"
+pass "local stage strips risky gitignore lines and commits in one call"
+
+# --- composite stage: publish (remote + push) --------------------------------
+
+REMOTE2="$WORK/remote2.git"
+git init --bare -b main "$REMOTE2" >/dev/null
+
+bash "$SCRIPT_DIR/apply.sh" --dir "$PROJECT2" --stage publish --remote-url "$REMOTE2" \
+  || fail "publish stage failed"
+git --git-dir="$REMOTE2" log -1 --format=%s 2>/dev/null | grep -q "sync /teach progress" \
+  || fail "expected the publish stage to have pushed the commit to the fake remote"
+pass "publish stage adds the remote and pushes in one call"
+
+# --- composite stage: all (init + gitignore + commit + remote + push) -------
+
+PROJECT3="$WORK/third-topic"
+REMOTE3="$WORK/remote3.git"
+mkdir -p "$PROJECT3"
+echo "# My Topic" > "$PROJECT3/MISSION.md"
+git init --bare -b main "$REMOTE3" >/dev/null
+
+bash "$SCRIPT_DIR/apply.sh" --dir "$PROJECT3" --stage all --remote-url "$REMOTE3" --commit-message-stdin <<<"sync /teach progress" \
+  || fail "all stage failed"
+git --git-dir="$REMOTE3" log -1 --format=%s 2>/dev/null | grep -q "sync /teach progress" \
+  || fail "expected the all stage to have pushed the commit to the fake remote"
+pass "all stage inits, commits, and publishes in a single call"
+
 echo "All smoke tests passed."

@@ -12,7 +12,7 @@ resumed from a Claude Code cloud session or the mobile app when the laptop
 isn't reachable. The recommended order is `/teach` first, `/teach-sync`
 second — run `/teach` yourself to build out a study plan, then run
 `/teach-sync` to push it, so the repo name can be based on the real topic
-(see step 7). Running `/teach-sync` first, on a still-empty folder, is also
+(see step 5). Running `/teach-sync` first, on a still-empty folder, is also
 supported (it'll offer to install `/teach` and stand up the repo under a
 folder-derived name for now) — but note that installing `/teach` mid-run
 doesn't make it invocable in that same conversation; see step 3.
@@ -32,10 +32,18 @@ injection-safe commit messages) that matter to get right:
 - `scripts/check.sh --dir PATH` — **read-only**. Reports facts about the
   target directory as `KEY=value` lines on stdout. Safe to run as often as
   needed; it never mutates anything.
-- `scripts/apply.sh --dir PATH --stage STAGE [flags]` — **mutates**, once per
-  stage (`init`, `gitignore`, `commit`, `remote`, `push`, or `all`). Never
+- `scripts/apply.sh --dir PATH --stage STAGE [flags]` — **mutates**. Never
   prompts interactively — every decision must already be made in
-  conversation before calling it.
+  conversation before calling it. Stages: the individual ones (`init`,
+  `gitignore`, `commit`, `remote`, `push`) for retrying a single failed step
+  in isolation (see "Common failure recovery"), and three composite ones
+  used for the normal flow below — `local` (init + gitignore + commit),
+  `publish` (remote + push), and `all` (every stage in one call). Prefer the
+  composite stages over chaining individual ones: each one is a single tool
+  call needing a single approval, so using `local` + `publish` instead of
+  five separate calls means five prompts become two, without losing the one
+  checkpoint that matters (nothing reaches GitHub until `publish` runs, so
+  the user always sees `local`'s output first).
 
 Invoke both with `bash <absolute path>/scripts/...`, not `./scripts/...`, so
 behavior doesn't depend on executable bits surviving however the skill was
@@ -98,67 +106,60 @@ on `TEACH_SKILL_FOUND` and `TEACH_ARTIFACTS_MISSING`:
 - **Found**: say so briefly and move on. Don't manufacture a question when
   the answer is already obvious.
 - **If the user declines to install**: continue with the sync anyway, but
-  make sure the final next-steps message (step 9) clearly calls out that
+  make sure the final next-steps message (step 6) clearly calls out that
   `/teach` still needs installing (and a fresh session) before it can be
   run — this warning must not get buried.
 - **If install is run**: track that it happened in this conversation, since
-  step 9 needs to include the new-session callout because of it — but don't
+  step 6 needs to include the new-session callout because of it — but don't
   otherwise change how the rest of this run proceeds.
 
-## 4. Git init
+## 4. Decide: one combined call, or two checkpoints?
 
-If `GIT_REPO=no`, run `bash <skill_dir>/scripts/apply.sh --dir <target>
---stage init`. If already a repo, just note that and move on — no need to
-narrate this step at length.
+Check whether this is a "smooth" sync — nothing below requires a decision:
+`GITIGNORE_RISKY` is empty, `AGENTS_SYMLINK` isn't `ignored`, and
+`REMOTE_ORIGIN` is already set. If all three hold, there's nothing to ask
+about except the commit message, so collapse everything into a single
+`all` call after one combined confirmation (step 5 below covers what to
+say). Otherwise, at least one of gitignore-fixing or repo-naming needs a
+real decision — use the two-checkpoint `local` then `publish` flow (steps
+5a/5b) so the user sees what happened locally before anything is pushed.
 
-## 5. Gitignore and symlink safety
+Either way, never skip straight to running a command — the confirmation
+always comes first; what changes is only how many separate `apply.sh` calls
+the conversation ends up making.
 
-If `GITIGNORE_RISKY` is non-empty, explain plainly which lines are hiding
-skill or progress files from git (and therefore from any cloud session that
-clones the repo), then ask before running `apply.sh --stage gitignore
---fix-gitignore`. If the user declines, don't fix it, but make sure they
-understand those files won't be synced.
+## 5. Prepare and publish
 
-If `AGENTS_SYMLINK=ignored`, treat it as the same problem — it's usually
-caused by the same `.gitignore` entry — and fold it into the same
-conversation rather than raising it as a separate interruption. If it's
-`trackable` or `not_a_symlink`, mention it only in passing if at all.
+Work out the pieces first, then make either one or two `apply.sh` calls
+depending on step 4:
 
-## 6. Stage and commit
-
-Propose a default commit message ("sync /teach progress") but invite the
-user to give their own instead. Whatever message is used — default or
-user-supplied — pass it via stdin, not as an inline shell argument, since a
-chat-authored message may contain characters (backticks, `$()`, quotes) that
-are unsafe to interpolate directly into a command line:
-
+**Commit message** — propose a default ("sync /teach progress") but invite
+the user to give their own instead. Whatever message is used, pass it via
+stdin, not as an inline shell argument, since a chat-authored message may
+contain characters (backticks, `$()`, quotes) unsafe to interpolate
+directly into a command line:
 ```
-bash <skill_dir>/scripts/apply.sh --dir <target> --stage commit --commit-message-stdin <<'EOF'
+--commit-message-stdin <<'EOF'
 <the message>
 EOF
 ```
 
-Check the exit code:
-- **Exit 3** means there are no commits anywhere in this repo's history yet
-  (a still-empty brand-new topic folder). Stop here — do not attempt the
-  remote or push stages. Tell the user to go run `/teach` to build out the
-  study plan, then come back and run `/teach-sync` again.
-- **Exit 0** means proceed to the next step (this includes the case where
-  there was nothing new to commit but prior history already exists).
+**Gitignore fix** — only relevant if `GITIGNORE_RISKY` is non-empty.
+Explain plainly which lines are hiding skill or progress files from git
+(and therefore from any cloud session that clones the repo), then ask
+before including `--fix-gitignore`. If the user declines, don't pass it,
+but make sure they understand those files won't be synced. Treat
+`AGENTS_SYMLINK=ignored` as the same problem (usually the same `.gitignore`
+entry) and fold it into the same ask rather than raising it separately.
 
-## 7. Remote setup — private repos only
+**Repo name and remote** — only relevant if `REMOTE_ORIGIN` is not already
+set. Branch on `GH_CLI` and `GH_AUTHENTICATED`:
 
-If `REMOTE_ORIGIN` from the preflight check is already set, skip this step
-entirely.
-
-Otherwise, branch on `GH_CLI` and `GH_AUTHENTICATED` from the preflight
-check:
-
-- **`GH_CLI=yes` and `GH_AUTHENTICATED=yes`** (the smooth path — and what
-  every sync after the first one should look like): offer to create the
-  repo via `gh`. `SUGGESTED_REPO_NAME` is only a suggestion — always ask in
-  chat before using it, and use whatever name the user gives instead if they
-  offer one. How to phrase the ask depends on `REPO_NAME_SOURCE`:
+- **`GH_CLI=yes` and `GH_AUTHENTICATED=yes`** (the smooth path — what every
+  sync after the first one should look like): `SUGGESTED_REPO_NAME` is only
+  a suggestion — always ask in chat before using it, and use whatever name
+  the user gives instead if they offer one. How to phrase the ask depends
+  on `REPO_NAME_SOURCE`:
   - `mission_topic` — `MISSION.md` already exists, so the name was derived
     from its actual topic (`MISSION_TOPIC`). E.g. "Based on your mission
     ('`<MISSION_TOPIC>`'), I'd suggest '`<SUGGESTED_REPO_NAME>`' for the repo
@@ -170,14 +171,9 @@ check:
     now — happy to use a different name, or you can rename it later once you
     know the topic (see the closing notes)."
 
-  Once the user has confirmed a name (suggested or their own), run:
-
-  ```
-  bash <skill_dir>/scripts/apply.sh --dir <target> --stage remote --gh-create-repo <name> --gh-bin "<GH_BIN>"
-  ```
-
-  Always pass `--gh-bin "<GH_BIN>"` (verbatim from `check.sh`'s output), not
-  a bare `gh` — see the `GH_CLI=no` bullet below for why.
+  Once confirmed, this becomes `--gh-create-repo <name> --gh-bin "<GH_BIN>"`
+  — always pass `--gh-bin "<GH_BIN>"` verbatim from `check.sh`'s output, not
+  a bare `gh` (see the `GH_CLI=no` bullet below for why).
 
 - **`GH_CLI=yes` but `GH_AUTHENTICATED=no`**: `gh` is installed but not
   logged in. `gh auth login` is an interactive, browser-based flow, so it
@@ -215,15 +211,11 @@ check:
   2. Repository name: `<SUGGESTED_REPO_NAME>` (or their own choice)
   3. Set visibility to **Private**
   4. Leave "Initialize this repository with a README" **unchecked** — the
-     local repo already has commits from step 6, and a README created on
-     GitHub's side would conflict with that history
+     local repo will already have commits, and a README created on GitHub's
+     side would conflict with that history
   5. Click **Create repository**, then copy the HTTPS URL it shows
 
-  Then run:
-
-  ```
-  bash <skill_dir>/scripts/apply.sh --dir <target> --stage remote --remote-url <url>
-  ```
+  This becomes `--remote-url <url>` instead of `--gh-create-repo`/`--gh-bin`.
 
 **Never present a public repo as an option, under any circumstance.** This
 tool exists to sync personal learning progress and is scoped to private
@@ -233,21 +225,41 @@ for a public repo, explain that this skill is intentionally scoped to
 private repos and that they'd need to do that step manually outside this
 flow.
 
-## 8. Push
+**Now run it**, per the step-4 decision:
 
-Unless the `remote` stage already pushed via `gh repo create ... --push`,
-confirm with the user that they're ready to push before running:
+- **Smooth (one call)**: confirm once — e.g. "I'll commit as '`<message>`'
+  and push — sound good?" — then:
+  ```
+  bash <skill_dir>/scripts/apply.sh --dir <target> --stage all --commit-message-stdin <<'EOF'
+  <message>
+  EOF
+  ```
+- **Two checkpoints**: first confirm the local prep — e.g. "I'll init git if
+  needed, [strip the risky `.gitignore` lines,] and commit as '`<message>`'
+  — sound good?" — then:
+  ```
+  bash <skill_dir>/scripts/apply.sh --dir <target> --stage local [--fix-gitignore] --commit-message-stdin <<'EOF'
+  <message>
+  EOF
+  ```
+  Check the exit code:
+  - **Exit 3** means there are no commits anywhere in this repo's history
+    yet (a still-empty brand-new topic folder). Stop here — do not attempt
+    `publish`. Tell the user to go run `/teach` to build out the study
+    plan, then come back and run `/teach-sync` again.
+  - **Exit 0** means proceed. Show the user anything notable from the
+    output (e.g. an untracked-file warning) before moving on.
 
-```
-bash <skill_dir>/scripts/apply.sh --dir <target> --stage push
-```
+  Then confirm separately before publishing — e.g. "Ready to push to
+  `<repo>`?" — this needs its own go-ahead even though local prep just
+  succeeded, since pushing is the step that actually leaves the machine:
+  ```
+  bash <skill_dir>/scripts/apply.sh --dir <target> --stage publish [--gh-create-repo <name> --gh-bin "<GH_BIN>" | --remote-url <url>]
+  ```
+  (Omit the bracketed flags entirely if `REMOTE_ORIGIN` was already set —
+  the `remote` half of this stage no-ops on its own in that case.)
 
-This is idempotent — running it even when `gh` already pushed is harmless.
-Don't skip the confirmation just because earlier stages already ran — each
-mutating call in this flow should have its own explicit go-ahead in the
-conversation, not an inherited one.
-
-## 9. Next steps
+## 6. Next steps
 
 Read `references/next-steps.md` and quote the matching variant verbatim
 (Variant A if `TEACH_ARTIFACTS_MISSING` was non-empty, Variant B otherwise),
@@ -262,7 +274,7 @@ silently with a 403.
   include that file's new-session callout — this is the common case and the
   one most likely to cause real confusion if skipped, since the user just
   watched the install apparently succeed.
-- If the repo name came from `REPO_NAME_SOURCE=folder_name` in step 7, also
+- If the repo name came from `REPO_NAME_SOURCE=folder_name` in step 5, also
   include that file's rename callout — phrase it as an open offer the user
   can take or leave, not a task they now owe you, since it's purely cosmetic
   and costs nothing to skip.
@@ -274,20 +286,21 @@ they run and exit 1 with a description on stderr rather than reporting
 success it didn't earn. A few failure modes are common enough to plan for
 in conversation:
 
-- **`gh repo create` fails** (in the `remote` stage) — usually because the
-  suggested name is already taken on the user's account, their `gh` session
-  expired since `check.sh` ran, or a network blip. Show the user the actual
-  error rather than guessing at it; then offer either a different repo name
-  (retry the `remote` stage) or the manual `--remote-url` checklist from
-  step 7 as a fallback.
-- **`git push` fails because histories diverged** (in the `push` stage) —
-  typically means the GitHub repo was created with "Initialize this
-  repository with a README" checked despite step 7's instruction not to, or
-  an existing non-empty repo was picked. Don't just retry the push; explain
-  the conflict and offer `git pull --rebase origin <branch>` run manually by
-  the user. Only mention `git push --force-with-lease` if the user
-  explicitly confirms they want the local history to win and understands
-  that discards the remote's differing commits.
+- **`gh repo create` fails** (inside a `publish` or `remote` call) — usually
+  because the suggested name is already taken on the user's account, their
+  `gh` session expired since `check.sh` ran, or a network blip. Show the
+  user the actual error rather than guessing at it; then offer either a
+  different repo name (retry with the individual `remote` stage, then
+  `push`) or the manual `--remote-url` checklist from step 5 as a fallback.
+- **`git push` fails because histories diverged** (inside a `publish` or
+  `push` call) — typically means the GitHub repo was created with
+  "Initialize this repository with a README" checked despite step 5's
+  instruction not to, or an existing non-empty repo was picked. Don't just
+  retry the push; explain the conflict and offer `git pull --rebase origin
+  <branch>` run manually by the user. Only mention `git push
+  --force-with-lease` if the user explicitly confirms they want the local
+  history to win and understands that discards the remote's differing
+  commits.
 - **`GH_AUTHENTICATED=yes` from `check.sh`, but `remote` or `push` still
   fails on auth** — a `gh` token can expire mid-conversation. Tell the user
   to re-run `gh auth login`, then re-run `check.sh` before retrying rather
@@ -297,16 +310,17 @@ in conversation:
 
 - Only ever create **private** repos — never offer or accept a public one.
 - Preserve the step order above; later steps assume earlier ones already
-  succeeded (e.g. don't attempt `remote`/`push` after a `commit` exit 3).
+  succeeded (e.g. don't attempt `publish` after a `local` exit 3).
 - Never mutate anything without having first checked `check.sh`'s current
   output — don't act on stale assumptions from earlier in a long
   conversation.
 - Never invoke `apply.sh` interactively expecting it to prompt — it never
   will; all judgment happens in the conversation before each call.
 - Every mutating `apply.sh` call needs its own explicit go-ahead from the
-  user in chat — don't chain straight into the next stage just because the
-  previous one succeeded. The script only ever does what's already been
-  agreed to; it never decides anything on its own.
+  user in chat first — using composite stages to cut down the *number* of
+  calls (step 4) is fine, but never skip the confirmation itself. In the
+  two-checkpoint flow, `publish` always needs its own go-ahead even right
+  after `local` succeeded — don't chain into it on an inherited yes.
 - Never attempt to run or automate `gh auth login` on the user's behalf —
   it's an interactive, browser-based OAuth flow that must run in their own
   terminal; the skill can only detect its state (`GH_AUTHENTICATED`) and

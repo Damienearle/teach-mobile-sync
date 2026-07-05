@@ -42,7 +42,7 @@ Next steps:
   6. Back on your laptop: git pull
 ```
 
-## Extra callout — only if the repo name came from the folder, not a real topic (`REPO_NAME_SOURCE=folder_name` in step 7)
+## Extra callout — only if the repo name came from the folder, not a real topic (`REPO_NAME_SOURCE=folder_name` in step 5)
 
 Append this as its own short line, phrased as an offer the user can take or
 leave — it's cosmetic, so don't make it sound like a pending task:
