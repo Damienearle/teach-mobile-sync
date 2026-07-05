@@ -6,23 +6,32 @@ Use this to continue your `/teach` study plan from your phone.
 
 ## One-time setup (laptop side)
 
-1. Make sure your `/teach` project folder is in a git repo. If you have the `setup-teach-sync.sh` script, just run it from the project root:
+1. Install the `teach-sync` Claude Code skill once, so it's available for every future topic:
    ```
-   cd /path/to/your/teach-project
-   chmod +x setup-teach-sync.sh
-   ./setup-teach-sync.sh
+   npx skills add Damienearle/teach-mobile-sync --skill teach-sync -g
    ```
-   It will:
+   (`-g` installs it globally, to `~/.claude/skills/teach-sync/`, so it works from any `/teach` project without reinstalling. Drop `-g` to install it into just the current project instead, version-pinned and committed with it.)
+
+2. Then, for each `/teach` project you want synced, inside a Claude Code session:
+   ```
+   /teach-sync                    # existing topic, run from its root
+   /teach-sync path/to/new-topic  # or, create a brand-new topic folder and sync it in one go
+   ```
+
+   Unlike a plain shell script, this is conversational — Claude asks you things in chat rather than stopping at rigid `[y/N]` prompts, and uses judgment about what to suggest (e.g. whether to nudge you toward installing `/teach` first). Under the hood it will:
+   - Confirm the project folder (or create the one you pass it)
+   - Check the `/teach` skill itself is installed, offering to install it if missing
    - Init git if needed
    - Check `.gitignore` isn't hiding your skill folder or progress files
    - Verify the `.claude`/`.agents` skill folder and `learning-records/` are actually tracked
-   - Create a **private** GitHub repo (via `gh` CLI if installed, or prompt you for a repo URL) and push
+   - Create a **private** GitHub repo (via `gh` CLI if installed, or ask you for a repo URL) and push
+   - Walk through next steps, including a reminder if the project still needs a `/teach` session to build out `MISSION.md`/`RESOURCES.md`/`lessons/`
 
-2. Connect GitHub to Claude (only needs doing once, ever):
+3. Connect GitHub to Claude (only needs doing once, ever):
    - Go to claude.ai → Settings → connect GitHub (OAuth)
    - Install the **Claude GitHub App** on this specific repo — this is the step people miss. OAuth alone only gives read access; without the App install, cloud-session pushes silently fail with a 403 even though everything else looks connected.
 
-3. Install the Claude Android app if you don't have it yet — run `/mobile` inside Claude Code to get a download QR. You'll need it to open cloud sessions from the Code tab.
+4. Install the Claude Android app if you don't have it yet — run `/mobile` inside Claude Code to get a download QR. You'll need it to open cloud sessions from the Code tab.
 
 ### Every time you want to work remotely without the laptop
 
@@ -46,5 +55,9 @@ Use this to continue your `/teach` study plan from your phone.
 
 ## Setting this up for the first time
 
-- GitHub's free plan includes unlimited **private** repos at no cost — You can create a repo for every new study topic to take on the road.
+- GitHub's free plan includes unlimited **private** repos at no cost — you can create a repo for every new study topic to take on the road.
 - Bookmark `claude.ai/code` to your phone's home screen (Chrome → Add to Home Screen) so opening a cloud session is one tap.
+- **Starting a brand-new topic?** `/teach-sync` only handles the git/GitHub side — it doesn't generate your actual study plan. The order that works:
+  1. `/teach-sync path/to/new-topic` — creates the folder, offers to install the `/teach` skill into it, and pushes an (empty) private repo.
+  2. In that same folder, run the `/teach` skill — it'll ask what you want to learn and build `MISSION.md`, `RESOURCES.md`, and `lessons/`.
+  3. Run `/teach-sync` again (or let the agent commit/push) to sync the real study plan up.

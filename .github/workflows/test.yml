@@ -1,0 +1,22 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git identity for test commits
+        run: |
+          git config --global user.email "smoke-test@example.com"
+          git config --global user.name "smoke-test"
+
+      - name: Run teach-sync smoke test
+        run: bash skills/teach-sync/scripts/smoke-test.sh
