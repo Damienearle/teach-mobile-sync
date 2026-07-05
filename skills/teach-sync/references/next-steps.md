@@ -4,16 +4,18 @@ Quote one of these two variants verbatim as the closing message, chosen by
 whether `TEACH_ARTIFACTS_MISSING` (from `check.sh`) was empty or not. Append
 whichever of the extra callouts below apply, on top of the chosen variant.
 
-Both variants always lead with the GitHub App reminder — it is the single
-most-missed step, and cloud-session pushes fail with a silent 403 without it.
+Both variants always lead with the GitHub connection reminder, since it's a
+one-time step that's easy to have skipped.
 
 ## Variant A — `TEACH_ARTIFACTS_MISSING` is non-empty (project not fully set up yet)
 
 ```
 Next steps:
-  1. Install the Claude GitHub App on this repo (one-time per repo):
-     claude.ai -> Settings -> GitHub -> install the App (not just OAuth).
-     OAuth alone won't let cloud sessions push changes back (fails with a 403).
+  1. Connect GitHub to Claude Code, if you haven't already (one-time, ever):
+     visit claude.ai/code and follow its prompt to connect your GitHub account.
+     A cloud session can access any repo that account can see — no per-repo setup
+     needed. Already using the gh CLI locally (this skill requires it anyway)?
+     Skip the browser flow: run /web-setup once inside the Claude Code CLI instead.
   2. This doesn't look like a fully set-up /teach project yet (missing: <list>).
      Open a new Claude Code session in this folder — locally, or a cloud session
      pointed at this repo — and run the /teach skill to build out your study plan
@@ -32,14 +34,30 @@ Next steps:
 
 ```
 Next steps:
-  1. Install the Claude GitHub App on this repo (one-time per repo):
-     claude.ai -> Settings -> GitHub -> install the App (not just OAuth).
-     OAuth alone won't let cloud sessions push changes back (fails with a 403).
+  1. Connect GitHub to Claude Code, if you haven't already (one-time, ever):
+     visit claude.ai/code and follow its prompt to connect your GitHub account.
+     A cloud session can access any repo that account can see — no per-repo setup
+     needed. Already using the gh CLI locally (this skill requires it anyway)?
+     Skip the browser flow: run /web-setup once inside the Claude Code CLI instead.
   2. On your phone, open claude.ai/code or the Claude Android app.
   3. Start a new cloud session and point it at this repo.
   4. Confirm the /teach skill loads (run /help or check the skill is listed).
   5. Work a lesson, then have the agent commit + push its own changes.
   6. Back on your laptop: git pull
+```
+
+## Extra callout — only if the user asks about installing the Claude GitHub App
+
+Some users have heard they need to "install the GitHub App" on the repo.
+Correct that if it comes up, rather than sending them looking for an install
+button they don't need:
+
+```
+You don't need to install the Claude GitHub App just to sync and work from your
+phone — a connected GitHub account can already access any repo it can see.
+Installing the App on a specific repo only matters if you want Auto-fix (Claude
+automatically responding to CI failures or review comments on that repo) — an
+optional extra, not required for this workflow.
 ```
 
 ## Extra callout — only if the repo name came from the folder, not a real topic (`REPO_NAME_SOURCE=folder_name` in step 5)

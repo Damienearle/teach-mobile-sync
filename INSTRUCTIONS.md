@@ -18,9 +18,10 @@ Use this to continue your `/teach` study plan from your phone.
    ```
    Do this in whatever terminal/session is convenient — it doesn't need to be inside a `/teach` project folder. **Important:** a skill installed mid-conversation doesn't show up in that same conversation — Claude Code loads its slash-command list once, when a session starts. If you install `/teach` while a Claude Code session is already open, that session won't see it; open a *new* one before running `/teach`. Installing it here, ahead of time, avoids that entirely.
 
-3. Connect GitHub to Claude (only needs doing once, ever):
-   - Go to claude.ai → Settings → connect GitHub (OAuth)
-   - Install the **Claude GitHub App** on this specific repo — this is the step people miss. OAuth alone only gives read access; without the App install, cloud-session pushes silently fail with a 403 even though everything else looks connected.
+3. Connect GitHub to Claude Code (only needs doing once, ever — not per-repo):
+   - Go to [claude.ai/code](https://claude.ai/code) and follow its prompt to connect your GitHub account. A connected account gives cloud sessions access to any repo it can see — there's no separate per-repo install step needed just to push and pull.
+   - Already have the `gh` CLI installed and authenticated locally (`gh auth login`) — which `/teach-sync` needs anyway to create repos? Skip the browser flow entirely: run `/web-setup` once inside the Claude Code CLI to sync that same `gh` authentication to your Claude account instead.
+   - You may see mentions of "installing the Claude GitHub App" elsewhere — that's a separate, optional feature (Auto-fix, where Claude automatically responds to CI failures or review comments on a specific repo). It's not required for the sync-and-work-from-phone workflow this doc covers.
 
 4. Install the Claude Android app if you don't have it yet — run `/mobile` inside Claude Code to get a download QR. You'll need it to open cloud sessions from the Code tab.
 

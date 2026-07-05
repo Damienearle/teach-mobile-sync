@@ -264,9 +264,12 @@ flow.
 Read `references/next-steps.md` and quote the matching variant verbatim
 (Variant A if `TEACH_ARTIFACTS_MISSING` was non-empty, Variant B otherwise),
 delivered conversationally rather than dumped as a raw block. Always include
-the Claude GitHub App reminder — installing the App (not just OAuth) is the
-single most-missed step, and skipping it makes cloud-session pushes fail
-silently with a 403.
+the GitHub-connection reminder (step 1 of the quoted variant) — it's a
+one-time step per Claude account, easy to have skipped. Per Anthropic's
+current docs, a connected GitHub account gives cloud sessions access to any
+repo it can see; installing the Claude GitHub App on a specific repo is only
+needed for the separate, optional Auto-fix feature, not for basic push
+access — don't tell users otherwise.
 
 - If `/teach` install was declined in step 3, also include that reference
   file's decline callout.
@@ -278,6 +281,10 @@ silently with a 403.
   include that file's rename callout — phrase it as an open offer the user
   can take or leave, not a task they now owe you, since it's purely cosmetic
   and costs nothing to skip.
+- If the user asks about installing the Claude GitHub App, or seems to be
+  chasing down an App-install button, use that reference file's callout to
+  correct the "you need the App or pushes fail" misconception rather than
+  sending them further down that path.
 
 ## Common failure recovery
 

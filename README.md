@@ -45,7 +45,7 @@ Claude will walk you through it conversationally — confirming the directory, c
 5. Verifies the `.claude`/`.agents` skill folder and `learning-records/` are actually tracked by git
 6. Commits your changes
 7. Creates a **private** GitHub repo (via `gh` CLI if you have it, or asks for a repo URL) and pushes
-8. Walks through next steps — including the easy-to-miss Claude GitHub App install, and a reminder to run `/teach` (in a new session, if it was just installed) if the project doesn't look fully set up yet
+8. Walks through next steps — including a reminder to connect GitHub to Claude Code if you haven't, and a reminder to run `/teach` (in a new session, if it was just installed) if the project doesn't look fully set up yet
 
 Public repos are never offered — this is personal learning progress, kept private.
 
@@ -53,7 +53,7 @@ Public repos are never offered — this is personal learning progress, kept priv
 
 Once pushed:
 
-1. Connect GitHub to Claude once, at claude.ai → Settings → GitHub — and install the **Claude GitHub App** on your repo (this is the step that's easy to miss; OAuth alone won't let cloud sessions push changes back)
+1. Connect GitHub to Claude Code once, ever — not per-repo: visit [claude.ai/code](https://claude.ai/code) and follow its prompt. A connected account gives cloud sessions access to any repo it can see. (Already use the `gh` CLI locally? Run `/web-setup` inside the Claude Code CLI instead, and skip the browser flow. Installing the "Claude GitHub App" on a specific repo is a separate, optional thing for Auto-fix — not needed here.)
 2. On your phone: Claude app → Code tab → New session → select your repo
 3. Work a lesson — the agent commits and pushes automatically as it finishes
 4. Back at your laptop: `git pull`
