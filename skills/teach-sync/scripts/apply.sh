@@ -14,6 +14,11 @@
 #   --commit-message-stdin    (commit stage) read the commit message from stdin instead of
 #                             using the default "sync /teach progress"
 #   --gh-create-repo NAME     (remote stage) create a private repo via gh and push
+#   --gh-bin PATH             (remote stage) gh binary to invoke; defaults to "gh" (PATH
+#                             lookup). Pass check.sh's GH_BIN when it resolved gh via an
+#                             absolute-path fallback (e.g. gh was just installed and isn't
+#                             on this shell's PATH yet) so this still works without a
+#                             terminal restart.
 #   --remote-url URL          (remote stage) add an existing repo URL as origin
 #                             (--gh-create-repo and --remote-url are mutually exclusive;
 #                             there is no --public flag, intentionally — this tool never
@@ -38,6 +43,7 @@ STAGE=""
 FIX_GITIGNORE=0
 COMMIT_MESSAGE_STDIN=0
 GH_CREATE_REPO=""
+GH_BIN="gh"
 REMOTE_URL_ARG=""
 BRANCH=""
 
@@ -48,6 +54,7 @@ while [[ $# -gt 0 ]]; do
     --fix-gitignore) FIX_GITIGNORE=1; shift ;;
     --commit-message-stdin) COMMIT_MESSAGE_STDIN=1; shift ;;
     --gh-create-repo) GH_CREATE_REPO="$2"; shift 2 ;;
+    --gh-bin) GH_BIN="$2"; shift 2 ;;
     --remote-url) REMOTE_URL_ARG="$2"; shift 2 ;;
     --branch) BRANCH="$2"; shift 2 ;;
     *) err "Unknown argument: $1"; exit 1 ;;
@@ -149,7 +156,7 @@ stage_remote() {
     return 0
   fi
   if [[ -n "$GH_CREATE_REPO" ]]; then
-    if ! gh repo create "$GH_CREATE_REPO" --private --source=. --remote=origin --push; then
+    if ! "$GH_BIN" repo create "$GH_CREATE_REPO" --private --source=. --remote=origin --push; then
       err "gh repo create failed — the name may already be taken, gh's auth may have expired, or there's a network issue. Try a different name, or fall back to --remote-url with a manually created repo."
       exit 1
     fi

@@ -127,4 +127,32 @@ git --git-dir="$REMOTE" log -1 --format=%s 2>/dev/null | grep -q "sync /teach pr
   || fail "expected the commit to have reached the bare remote"
 pass "remote + push land the commit in the fake GitHub remote"
 
+# --- find_gh_bin: bare "gh" when it's already on PATH -----------------------
+
+BASH_BIN="$(command -v bash)"
+FAKE_BIN="$WORK/fakebin"
+mkdir -p "$FAKE_BIN"
+cat > "$FAKE_BIN/gh" <<'EOF'
+#!/usr/bin/env bash
+echo "fake gh"
+EOF
+chmod +x "$FAKE_BIN/gh"
+
+RESOLVED="$(PATH="$FAKE_BIN" "$BASH_BIN" -c "source \"$SCRIPT_DIR/lib.sh\"; find_gh_bin")"
+[[ "$RESOLVED" == "gh" ]] \
+  || fail "expected find_gh_bin to return bare 'gh' when it's on PATH, got: $RESOLVED"
+pass "find_gh_bin returns bare 'gh' when it's already on PATH"
+
+# --- find_gh_bin: falls back to an absolute install location off PATH -------
+# (Whether that fallback fires depends on what's actually installed on this
+# machine — the point is just that the result, if any, is a real executable.)
+
+RESOLVED="$(PATH="/nonexistent" "$BASH_BIN" -c "source \"$SCRIPT_DIR/lib.sh\"; find_gh_bin")"
+if [[ -n "$RESOLVED" ]]; then
+  [[ -x "$RESOLVED" ]] || fail "find_gh_bin returned a non-executable path: $RESOLVED"
+  pass "find_gh_bin falls back to a real, executable install location off PATH"
+else
+  pass "find_gh_bin correctly reports gh as unavailable when it's off PATH and not in any known location"
+fi
+
 echo "All smoke tests passed."

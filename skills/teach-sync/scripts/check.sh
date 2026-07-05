@@ -145,15 +145,17 @@ fi
 # Tooling availability
 # ---------------------------------------------------------------------------
 
-if command -v gh >/dev/null 2>&1; then
+if GH_BIN="$(find_gh_bin)"; then
   echo "GH_CLI=yes"
-  if gh auth status >/dev/null 2>&1; then
+  echo "GH_BIN=$GH_BIN"
+  if "$GH_BIN" auth status >/dev/null 2>&1; then
     echo "GH_AUTHENTICATED=yes"
   else
     echo "GH_AUTHENTICATED=no"
   fi
 else
   echo "GH_CLI=no"
+  echo "GH_BIN="
   echo "GH_AUTHENTICATED=no"
 fi
 if command -v npx >/dev/null 2>&1; then echo "NPX_AVAILABLE=yes"; else echo "NPX_AVAILABLE=no"; fi

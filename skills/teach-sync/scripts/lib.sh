@@ -91,6 +91,35 @@ slugify() {
     | sed -E 's/[^a-z0-9-]+//g; s/-+/-/g; s/^-+//; s/-+$//'
 }
 
+# Resolves the gh CLI binary to invoke: prefers a bare "gh" already on PATH
+# (the common case), but falls back to checking common absolute install
+# locations across platforms if that fails. This matters because installing
+# gh (e.g. via winget, right after this skill suggested it) updates the
+# *system* PATH, not the environment already inherited by whatever shell is
+# running this session — so `command -v gh` keeps failing until that shell
+# is restarted, even though gh is genuinely there. Prints the resolved
+# binary (bare "gh" or an absolute path) to stdout; prints nothing and
+# returns 1 if gh can't be found anywhere.
+find_gh_bin() {
+  if command -v gh >/dev/null 2>&1; then
+    printf 'gh'
+    return 0
+  fi
+  local candidates=(
+    "/c/Program Files/GitHub CLI/gh.exe"
+    "/opt/homebrew/bin/gh"
+    "/usr/local/bin/gh"
+    "/usr/bin/gh"
+    "$HOME/.local/bin/gh"
+  )
+  [[ -n "${LOCALAPPDATA:-}" ]] && candidates+=("$LOCALAPPDATA/Microsoft/WinGet/Links/gh.exe")
+  local c
+  for c in "${candidates[@]}"; do
+    [[ -x "$c" ]] && { printf '%s' "$c"; return 0; }
+  done
+  return 1
+}
+
 # Extracts the topic from <dir>/MISSION.md's "# Mission: {Topic}" heading —
 # the format /teach's own MISSION-FORMAT.md prescribes. Prints the trimmed
 # topic text to stdout; prints nothing and returns 1 if MISSION.md doesn't

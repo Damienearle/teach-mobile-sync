@@ -159,8 +159,11 @@ check:
   Once the user has confirmed a name (suggested or their own), run:
 
   ```
-  bash <skill_dir>/scripts/apply.sh --dir <target> --stage remote --gh-create-repo <name>
+  bash <skill_dir>/scripts/apply.sh --dir <target> --stage remote --gh-create-repo <name> --gh-bin "<GH_BIN>"
   ```
+
+  Always pass `--gh-bin "<GH_BIN>"` (verbatim from `check.sh`'s output), not
+  a bare `gh` — see the `GH_CLI=no` bullet below for why.
 
 - **`GH_CLI=yes` but `GH_AUTHENTICATED=no`**: `gh` is installed but not
   logged in. `gh auth login` is an interactive, browser-based flow, so it
@@ -168,6 +171,11 @@ check:
   this skill can't drive it for them. Tell them to run `gh auth login`
   themselves, then say when they're done (or just re-run `/teach-sync`) so
   a fresh `check.sh` call can confirm before proceeding down the path above.
+  On Windows, if their terminal is Git Bash and `gh auth login` fails with
+  "could not prompt: Incorrect function" / a MinTTY warning, tell them to
+  either run `winpty gh auth login` instead (same window), or run that one
+  command from PowerShell/cmd.exe — Git Bash's default terminal (MinTTY)
+  doesn't support the interactive prompt gh needs.
 
 - **`GH_CLI=no`**: give them the one-line install command for their platform
   (e.g. `winget install --id GitHub.cli`, `brew install gh`, or
@@ -175,7 +183,15 @@ check:
   caveat as above) is still needed after installing. This is a one-time
   setup cost — once `gh` is installed and authenticated, every subsequent
   `/teach-sync` on any project uses the smooth path above with no manual
-  copy-pasting.
+  copy-pasting. After they say they've installed it, re-run `check.sh`
+  rather than assuming it worked. `GH_BIN` resolves via a fallback list of
+  common install locations if a bare `gh` isn't on `PATH` yet, so this
+  usually keeps working in the same terminal session without needing a
+  restart — a fresh install often isn't on `PATH` in a shell that was
+  already open when it was installed. Only if `GH_CLI` is still `no` after
+  a real install does the shell genuinely not know where it landed (e.g.
+  installed somewhere `find_gh_bin` doesn't check); restarting the terminal
+  is the fallback fix in that case.
 
 - **If the user prefers not to use `gh` at all**, regardless of whether it's
   installed or authenticated: fall back to a manual, copy-paste-able
