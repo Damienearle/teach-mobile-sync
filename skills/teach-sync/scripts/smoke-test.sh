@@ -33,6 +33,22 @@ OUT="$(bash "$SCRIPT_DIR/check.sh" --dir "$PROJECT")"
 [[ "$(kv "$OUT" GIT_REPO)" == "no" ]] || fail "expected GIT_REPO=no on a fresh folder"
 pass "check.sh reports a fresh folder correctly"
 
+# --- /teach skill detection avoids self-matching teach-sync ------------------
+
+mkdir -p "$PROJECT/.claude/skills/teach-sync"
+OUT="$(bash "$SCRIPT_DIR/check.sh" --dir "$PROJECT")"
+[[ "$(kv "$OUT" TEACH_SKILL_FOUND)" == "no" ]] \
+  || fail "expected TEACH_SKILL_FOUND=no when only teach-sync itself is installed"
+pass "check.sh does not mistake teach-sync for /teach itself"
+
+mkdir -p "$PROJECT/.claude/skills/teach"
+OUT="$(bash "$SCRIPT_DIR/check.sh" --dir "$PROJECT")"
+[[ "$(kv "$OUT" TEACH_SKILL_FOUND)" == "yes" ]] \
+  || fail "expected TEACH_SKILL_FOUND=yes once /teach itself is installed"
+pass "check.sh detects an actual /teach install"
+
+rm -rf "$PROJECT/.claude"
+
 bash "$SCRIPT_DIR/apply.sh" --dir "$PROJECT" --stage init || fail "init stage failed"
 [[ -d "$PROJECT/.git" ]] || fail "expected .git after init stage"
 pass "init stage creates a git repo"

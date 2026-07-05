@@ -27,14 +27,19 @@ EXPECTED_TEACH_ARTIFACTS=("MISSION.md" "RESOURCES.md" "lessons" "learning-record
 # line) to stdout; prints nothing and returns 1 if none found. Globs alone
 # are used (not also the exact ".../teach" path) since "*teach*" already
 # matches a directory named exactly "teach" — listing both would report the
-# same match twice.
+# same match twice. Explicitly skips "teach-sync" itself: it's this skill's
+# own name, so it's almost always installed alongside /teach (globally,
+# project-locally, or mirrored under .agents/skills/ by the CLI's "universal"
+# install mode) and would otherwise self-match as a false positive.
 find_teach_skill() {
   local dir="$1"
   local found=0
-  local d
+  local d base
   for d in "$dir"/.claude/skills/*teach* "$dir"/.agents/skills/*teach* \
            "$HOME"/.claude/skills/*teach* "$HOME"/.agents/skills/*teach*; do
     if [[ -d "$d" ]]; then
+      base="$(basename "$d")"
+      [[ "$base" == "teach-sync" ]] && continue
       echo "$d"
       found=1
     fi
